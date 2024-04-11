@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import axios from 'axios';
 import './Register.css';
 
 const Register = () => {
@@ -12,6 +13,7 @@ const Register = () => {
         gender: ''
     });
 
+    const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
@@ -42,7 +44,20 @@ const Register = () => {
             setError('Şifreleriniz eşleşmiyor.');
         } else {
             setError('');
-            console.log(formData);
+            axios.post( 'http://localhost:3000/register', {formData})
+            .then(result => {
+                console.log(result);
+                if(result.data === "Already registered"){
+                    alert("E-mail already registered! Please Login to proceed.");
+                    navigate('/login');
+                }
+                else{
+                    alert("Registered successfully! Please Login to proceed.")
+                    navigate('/login');
+                }
+                
+            })
+            .catch(err => console.log(err));
         }
     };
 

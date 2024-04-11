@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Login.css';
 
 const Login = () => {
@@ -7,6 +8,9 @@ const Login = () => {
         email: '',
         password: ''
     });
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -16,9 +20,23 @@ const Login = () => {
         });
     };
 
+    const handleTogglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
+
+    const validateEmail = (email) => {
+        const re = /\S+@\S+\.\S+/;
+        return re.test(email);
+    };
+   
+
+ 
     const handleSubmit = (e) => {
         e.preventDefault();
         // Giriş yapılacak işlemleri buraya ekleyin
+        if (!validateEmail(formData.email)) {
+            setError('Geçerli bir e-posta adresi girin.');
+        }
         console.log(formData); // Örneğin, form verilerini konsola yazdırabilirsiniz
     };
 
@@ -28,15 +46,22 @@ const Login = () => {
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label>E-posta:</label>
-                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} />
+                    <input type="email" name="email" value={formData.email}  onChange={handleInputChange} />
                 </div>
+                {error && <p className="error-message">{error}</p>}
+
                 <div className="form-group">
                     <label>Şifre:</label>
-                    <input type="password" name="password" value={formData.password} onChange={handleInputChange} />
+                    <div className="password-input">
+                        <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleInputChange} />
+                        <button type="button" onClick={handleTogglePasswordVisibility}>
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                    </div>
                 </div>
-                <Link to="/main"><button type="submit">Giriş Yap</button></Link>
+                <button type="submit">Giriş Yap</button>
             </form>
-            <p>Henüz üye değil misiniz? <Link to="/">Üye Ol.</Link></p>
+            <p>Henüz üye değil misiniz? <Link to="/register">Üye Ol.</Link></p>
         </div>
     );
 };
