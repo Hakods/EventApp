@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Register.css';
 
 const Register = () => {
+    
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -34,32 +35,42 @@ const Register = () => {
         setShowConfirmPassword(!showConfirmPassword);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // E-posta adresinin geçerli olup olmadığını kontrol et
         if (!validateEmail(formData.email)) {
             setError('Geçerli bir e-posta adresi girin.');
-        } else if (!validatePassword(formData.password)) {
+            return;
+        }
+
+        // Diğer alanların geçerliliğini kontrol et
+        if (!validatePassword(formData.password)) {
             setError('Şifreniz en az 8 karakter uzunluğunda olmalıdır ve en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.');
-        } else if (formData.password !== formData.confirmPassword) {
+            return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
             setError('Şifreleriniz eşleşmiyor.');
-        } else {
-            setError('');
-            axios.post( 'http://localhost:3000/register', {formData})
-            .then(result => {
-                console.log(result);
-                if(result.data === "Already registered"){
-                    alert("E-mail already registered! Please Login to proceed.");
-                    navigate('/login');
-                }
-                else{
-                    alert("Registered successfully! Please Login to proceed.")
-                    navigate('/login');
-                }
-                
-            })
-            .catch(err => console.log(err));
+            return;
+        }
+
+        try {
+            // Backend'e kayıt isteği gönder
+            const response = await axios.post('http://localhost:8000/register', formData);
+
+            // Başarılı kayıt durumunda giriş sayfasına yönlendir
+            if (response.status === 201) {
+                navigate('/login');
+            } else {
+                setError('Bir hata oluştu. Lütfen tekrar deneyin.');
+            }
+        } catch (error) {
+            console.error('Kayıt işlemi başarısız oldu:', error);
+            setError('Kayıt işlemi başarısız oldu. Lütfen tekrar deneyin.');
         }
     };
+
 
     const validateEmail = (email) => {
         const re = /\S+@\S+\.\S+/;

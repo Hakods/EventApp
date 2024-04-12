@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import axios from 'axios';
 import './Login.css';
 
 const Login = () => {
@@ -9,7 +10,7 @@ const Login = () => {
         password: ''
     });
 
-    const [showPassword, setShowPassword] = useState(false);
+    const navigate = useNavigate();
     const [error, setError] = useState('');
 
     const handleInputChange = (e) => {
@@ -19,6 +20,8 @@ const Login = () => {
             [name]: value
         });
     };
+    
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleTogglePasswordVisibility = () => {
         setShowPassword(!showPassword);
@@ -28,21 +31,32 @@ const Login = () => {
         const re = /\S+@\S+\.\S+/;
         return re.test(email);
     };
-   
 
- 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Giriş yapılacak işlemleri buraya ekleyin
         if (!validateEmail(formData.email)) {
             setError('Geçerli bir e-posta adresi girin.');
+            return;
         }
-        console.log(formData); // Örneğin, form verilerini konsola yazdırabilirsiniz
+    
+        try {
+            const response = await axios.post('http://localhost:8000/login', formData);
+            if (response.data.success) {
+                // Kullanıcı doğrulandıysa ana sayfaya yönlendir
+                navigate('/Basariligiris');
+            } else {
+                setError('Kullanıcı adı veya şifre hatalı.');
+            }
+        } catch (error) {
+            console.error('Giriş işlemi başarısız oldu:', error);
+            setError('Giriş işlemi başarısız oldu. Lütfen tekrar deneyin.');
+        }
     };
 
     return (
         <div className="login-container">
             <h2>Giriş Yap</h2>
+            
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label>E-posta:</label>
@@ -61,7 +75,7 @@ const Login = () => {
                 </div>
                 <button type="submit">Giriş Yap</button>
             </form>
-            <p>Henüz üye değil misiniz? <Link to="/register">Üye Ol.</Link></p>
+            <p>Hesabınız yok mu? <Link to="/register">Kayıt olun.</Link></p>
         </div>
     );
 };
