@@ -43,7 +43,7 @@ const Login = () => {
             const response = await axios.post('http://localhost:8000/login', formData);
             if (response.data.success) {
                 // Kullanıcı doğrulandıysa ana sayfaya yönlendir
-                navigate('/Basariligiris');
+                navigate('/home');
             } else {
                 setError('Kullanıcı adı veya şifre hatalı.');
             }
