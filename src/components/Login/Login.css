@@ -25,12 +25,15 @@
     display: block;
     margin-bottom: 5px;
   }
+
+  .form-group input[type="email"]{
+    width: calc(100% - 22px);
+  }
   
   input[type="text"],
   input[type="email"],
   input[type="password"],
   select {
-    width: calc(100% - 22px); /* Genel input genişliği ayarı */
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;

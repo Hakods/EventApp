@@ -23,7 +23,8 @@
     margin-bottom: 5px;
   }
   
-  .form-group input {
+  .form-group input[type="text"]
+  input[type="date"]  {
     width: 100%;
     padding: 10px;
     border: 1px solid #ccc;

@@ -5,7 +5,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Register.css';
 
 const Register = () => {
-    
+
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -115,14 +115,14 @@ const Register = () => {
                 </div>
                 <div className="form-group">
                     <label>Cinsiyet:</label>
-                    <div className="gender-options">
+                    <div className="gender-group radio-group">
                         <label>
                             <input type="radio" name="gender" value="male" checked={formData.gender === 'male'} onChange={handleInputChange} />
-                            Erkek
+                            <span>Erkek</span>
                         </label>
                         <label>
                             <input type="radio" name="gender" value="female" checked={formData.gender === 'female'} onChange={handleInputChange} />
-                            Kadın
+                            <span>Kadın</span>
                         </label>
                     </div>
                 </div>
