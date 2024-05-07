@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const User = require('./models/UserModel'); // Modeli import edin
+const Event = require('./models/EventModel');
+
+
 
 
 const app = express();
@@ -66,6 +69,38 @@ app.post('/login', async (req, res) => {
   }
 });
 
+
+
+// Etkinlik oluşturma
+app.post('/home', async (req, res) => {
+  console.log(req.body); // Gelen isteğin gövdesini konsola yazdır
+  const { eventName, eventDate, eventLocation, eventDescription } = req.body;
+  try {
+    // Yeni bir Etkinlik belgesi oluştur
+    const newEvent = new Event({
+      eventName,
+      eventDate,
+      eventLocation,
+      eventDescription
+    });
+
+    // MongoDB'ye kaydet
+   await newEvent.save()
+      .then(savedEvent => {
+        console.log('Etkinlik başarıyla kaydedildi:', savedEvent);
+        res.status(201).json({ message: 'Etkinlik başarıyla oluşturuldu.' });
+      })
+      .catch(err => {
+        console.error('Etkinlik kaydederken bir hata oluştu:', err);
+        res.status(500).send('Sunucu hatası');
+      });
+    console.log('Etkinlik başarıyla kaydedildi'); // Başarılı kaydetme durumunda bir log
+    res.status(201).json({ message: 'Etkinlik başarıyla oluşturuldu.' });
+  } catch (err) {
+    console.error('Etkinlik kaydederken bir hata oluştu:', err); // Hata durumunda bir hata mesajı yazdır
+    res.status(500).send('Sunucu hatası');
+  }
+});
 
 
 
