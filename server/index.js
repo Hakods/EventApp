@@ -6,8 +6,6 @@ const User = require('./models/UserModel'); // Modeli import edin
 const Event = require('./models/EventModel');
 
 
-
-
 const app = express();
 
 // Middleware
@@ -85,7 +83,7 @@ app.post('/home', async (req, res) => {
     });
 
     // MongoDB'ye kaydet
-   await newEvent.save()
+    await newEvent.save()
       .then(savedEvent => {
         console.log('Etkinlik başarıyla kaydedildi:', savedEvent);
         res.status(201).json({ message: 'Etkinlik başarıyla oluşturuldu.' });
@@ -94,17 +92,10 @@ app.post('/home', async (req, res) => {
         console.error('Etkinlik kaydederken bir hata oluştu:', err);
         res.status(500).send('Sunucu hatası');
       });
-    console.log('Etkinlik başarıyla kaydedildi'); // Başarılı kaydetme durumunda bir log
-    res.status(201).json({ message: 'Etkinlik başarıyla oluşturuldu.' });
   } catch (err) {
-    console.error('Etkinlik kaydederken bir hata oluştu:', err); // Hata durumunda bir hata mesajı yazdır
-    res.status(500).send('Sunucu hatası');
+    console.error('Etkinlik kaydederken bir hata oluştu:', err);
   }
 });
-
-
-
-
 
 // Port dinleme
 const port = process.env.PORT || 8000;
