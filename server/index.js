@@ -97,6 +97,40 @@ app.post('/home', async (req, res) => {
   }
 });
 
+
+
+// Sunucu tarafında etkinlikleri getiren endpoint
+app.get('/events', async (req, res) => {
+  try {
+    const events = await Event.find(); // Tüm etkinlikleri al
+    res.status(200).json(events); // Alınan etkinlikleri istemciye gönder
+  } catch (error) {
+    console.error('Etkinlikleri getirirken bir hata oluştu:', error);
+    res.status(500).json({ message: 'Etkinlikleri getirirken bir hata oluştu' });
+  }
+});
+// /user-profile endpoint'i
+app.get('/user-profile', async (req, res) => {
+  try {
+    // Oturum açmış kullanıcıyı bul
+    const user = req.session.user;
+
+    if (!user) {
+      throw new Error('Oturum açmış bir kullanıcı bulunamadı.');
+    }
+
+    // Kullanıcının bilgilerini döndür
+    res.json(user);
+  } catch (error) {
+    console.error('Kullanıcı bilgilerini getirirken bir hata oluştu:', error);
+    res.status(500).json({ error: 'Kullanıcı bilgilerini getirirken bir hata oluştu.' });
+  }
+});
+
+
+
+
+
 // Port dinleme
 const port = process.env.PORT || 8000;
 app.listen(port, () => {
