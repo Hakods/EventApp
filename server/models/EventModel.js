@@ -17,7 +17,11 @@ const eventSchema = new mongoose.Schema({
   eventDescription: {
     type: String,
     required: true
-  }
+  },
+  participants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 });
 
 // Etkinlik modeli

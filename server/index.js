@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const User = require('./models/UserModel'); // Modeli import edin
 const Event = require('./models/EventModel');
+const jwt = require('jsonwebtoken');
+
 
 
 const app = express();
@@ -71,15 +73,16 @@ app.post('/login', async (req, res) => {
 
 // Etkinlik oluşturma
 app.post('/home', async (req, res) => {
-  console.log(req.body); // Gelen isteğin gövdesini konsola yazdır
-  const { eventName, eventDate, eventLocation, eventDescription } = req.body;
+  const { eventName, eventDate, eventLocation, eventDescription, maxParticipants } = req.body; // Maksimum katılımcı sayısını da al
   try {
     // Yeni bir Etkinlik belgesi oluştur
     const newEvent = new Event({
       eventName,
       eventDate,
       eventLocation,
-      eventDescription
+      eventDescription,
+      maxParticipants, // Maksimum katılımcı sayısını kaydet
+      participants: [] // Başlangıçta katılımcı yok
     });
 
     // MongoDB'ye kaydet
@@ -94,10 +97,33 @@ app.post('/home', async (req, res) => {
       });
   } catch (err) {
     console.error('Etkinlik kaydederken bir hata oluştu:', err);
+    res.status(500).send('Sunucu hatası');
   }
 });
 
+// Etkinliğe katılma
+app.post('/events/:eventId/join', async (req, res) => {
+  const eventId = req.params.eventId;
+  try {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Etkinlik bulunamadı' });
+    }
+    
+    // Maksimum katılımcı sayısını kontrol et
+    if (event.participants.length >= event.maxParticipants) {
+      return res.status(400).json({ message: 'Etkinlik dolu' });
+    }
 
+    // Etkinliğe katılımı güncelle
+    event.participants.push(req.userId); // Varsayılan olarak, kullanıcı kimliğini burada kullanıyoruz
+    await event.save();
+    res.status(200).json({ message: 'Etkinliğe katılım başarılı' });
+  } catch (error) {
+    console.error('Etkinliğe katılma işleminde bir hata oluştu:', error);
+    res.status(500).json({ message: 'Etkinliğe katılım işlemi başarısız' });
+  }
+});
 
 // Sunucu tarafında etkinlikleri getiren endpoint
 app.get('/events', async (req, res) => {
@@ -109,24 +135,59 @@ app.get('/events', async (req, res) => {
     res.status(500).json({ message: 'Etkinlikleri getirirken bir hata oluştu' });
   }
 });
+
 // /user-profile endpoint'i
 app.get('/user-profile', async (req, res) => {
   try {
-    // Oturum açmış kullanıcıyı bul
-    const user = req.session.user;
+    // Oturum açmış kullanıcının JWT'sini al
+    const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : null;
+    if (!token) {
+      return res.status(401).json({ error: 'Yetkilendirme başarısız: Token bulunamadı.' });
+    }
+    // JWT'yi doğrula ve kullanıcı kimliğini al
+    const decodedToken = jwt.verify(token, 'your_jwt_secret');
+    const userId = decodedToken.userId;
+
+    // Kullanıcıyı bul
+    const user = await User.findById(userId);
 
     if (!user) {
-      throw new Error('Oturum açmış bir kullanıcı bulunamadı.');
+      return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
     }
 
     // Kullanıcının bilgilerini döndür
     res.json(user);
   } catch (error) {
     console.error('Kullanıcı bilgilerini getirirken bir hata oluştu:', error);
-    res.status(500).json({ error: 'Kullanıcı bilgilerini getirirken bir hata oluştu.' });
+    res.status(500).json({ error: 'Sunucu hatası: Kullanıcı bilgileri getirilemedi.' });
   }
 });
 
+
+// Kullanıcıyı güncelleme endpoint'i
+app.put('/user-profile', async (req, res) => {
+  try {
+    // Oturum açmış kullanıcının JWT'sini al
+    const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : null;
+    if (!token) {
+      return res.status(401).json({ error: 'Yetkilendirme başarısız: Token bulunamadı.' });
+    }
+    // JWT'yi doğrula ve kullanıcı kimliğini al
+    const decodedToken = jwt.verify(token, 'your_jwt_secret');
+    const userId = decodedToken.userId;
+
+    // Güncellenecek kullanıcı bilgilerini al
+    const updatedUserData = req.body;
+
+    // Kullanıcıyı güncelle
+    await User.findByIdAndUpdate(userId, updatedUserData);
+
+    res.json({ message: 'Kullanıcı bilgileri başarıyla güncellendi.' });
+  } catch (error) {
+    console.error('Kullanıcı bilgilerini güncellerken bir hata oluştu:', error);
+    res.status(500).json({ error: 'Sunucu hatası: Kullanıcı bilgileri güncellenemedi.' });
+  }
+});
 
 
 
