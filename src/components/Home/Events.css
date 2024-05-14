@@ -1,40 +1,58 @@
 /* Events.css */
 
 .event-list-container {
-    margin: 20px auto;
-    max-width: 1000px;
-  }
-  
-  .event-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    grid-gap: 20px;
-    justify-content: space-between; /* Kartları satırda iki kenara doğru hizala */
-  }
-  
-  .event-card {
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    transition: transform 0.3s ease; /* Geçiş efekti */
-  }
-  
-  .event-card:hover {
-    transform: translateY(-5px); /* Fare üzerine gelindiğinde hafifçe yukarı kaldır */
-  }
-  
-  .event-card h3 {
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-  }
-  
-  .event-card p {
-    font-size: 1rem;
-    margin-bottom: 5px;
-  }
-  
-  .event-card p strong {
-    font-weight: bold;
-  }
-  
+  margin: 20px auto;
+  max-width: 1000px;
+}
+
+.event-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-gap: 20px;
+  justify-content: space-between; /* Kartları satırda iki kenara doğru hizala */
+}
+
+.event-card {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  transition: transform 0.3s ease; /* Geçiş efekti */
+}
+
+.event-card:hover {
+  transform: translateY(-5px); /* Fare üzerine gelindiğinde hafifçe yukarı kaldır */
+}
+
+.event-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.event-card p {
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.event-card p strong {
+  font-weight: bold;
+}
+
+.event-card .participants {
+  margin-top: 10px;
+}
+
+.event-card button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease; /* Geçiş efekti */
+}
+
+.event-card button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

@@ -7,16 +7,13 @@ const Home = () => {
     const [eventDate, setEventDate] = useState('');
     const [eventLocation, setEventLocation] = useState('');
     const [eventDescription, setEventDescription] = useState('');
+    const [maxParticipants, setMaxParticipants] = useState(0); // Maksimum katılımcı sayısı için state
 
     const handleEventCreation = async () => {
-
-        if (!eventName || !eventDate || !eventLocation || !eventDescription) {
-            alert('Tüm etkinlik detaylarını doldurunuz.');
-            // Kullanıcıya bir hata mesajı göstermek için istediğiniz bir yöntemi kullanabilirsiniz
+        if (!eventName || !eventDate || !eventLocation || !eventDescription || maxParticipants <= 0) {
+            alert('Tüm etkinlik detaylarını ve maksimum katılımcı sayısını doldurunuz.');
             return;
         }
-
-
 
         try {
             const response = await fetch('http://localhost:8000/home', {
@@ -29,28 +26,24 @@ const Home = () => {
                     eventDate,
                     eventLocation,
                     eventDescription,
+                    maxParticipants // Maksimum katılımcı sayısını gönder
                 }),
             });
 
             if (response.ok) {
-                const savedEvent = await response.json(); // savedEvent'i tanımlayın
+                const savedEvent = await response.json();
                 console.log('Etkinlik başarıyla kaydedildi:', savedEvent);
                 setEventName('');
                 setEventDate('');
                 setEventLocation('');
                 setEventDescription('');
+                setMaxParticipants(0); // Maksimum katılımcı sayısını sıfırla
                 // Başarılı durumda response göndermek
-                // Örneğin, kullanıcıya bir bildirim gösterebilir veya yönlendirme yapabilirsiniz
-                // veya işlemin başarılı olduğunu göstermek için bir state güncelleyebilirsiniz
             } else {
-                const errorData = await response.json(); // errorData'yı tanımlayın
+                const errorData = await response.json();
                 console.error('Etkinlik kaydederken bir hata oluştu:', errorData);
                 // Hata durumunda response göndermek
-                // Örneğin, kullanıcıya bir hata mesajı gösterebilir veya işlem başarısız olduğunu belirtmek için bir state güncelleyebilirsiniz
             }
-
-
-
         } catch (error) {
             console.error('Sunucu hatası:', error);
         }
@@ -63,20 +56,24 @@ const Home = () => {
                 <div className="container">
                     <h2>Etkinlik Oluştur</h2>
                     <div>
-                        <label> Etkinlik Adı: </label>
+                        <label>Etkinlik Adı:</label>
                         <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} />
                     </div>
                     <div>
-                        <label> Etkinlik Tarihi: </label>
+                        <label>Etkinlik Tarihi:</label>
                         <input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
                     </div>
                     <div>
-                        <label> Etkinlik Yeri: </label>
+                        <label>Etkinlik Yeri:</label>
                         <input type="text" value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} />
                     </div>
                     <div>
-                        <label> Etkinlik Açıklaması: </label>
+                        <label>Etkinlik Açıklaması:</label>
                         <textarea value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} />
+                    </div>
+                    <div>
+                        <label>Maksimum Katılımcı Sayısı:</label>
+                        <input type="number" value={maxParticipants} onChange={(e) => setMaxParticipants(parseInt(e.target.value))} />
                     </div>
                     <button onClick={handleEventCreation}>Etkinlik Oluştur</button>
                 </div>
