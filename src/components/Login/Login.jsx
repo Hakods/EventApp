@@ -12,6 +12,7 @@ const Login = () => {
 
     const navigate = useNavigate();
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -20,8 +21,6 @@ const Login = () => {
             [name]: value
         });
     };
-    
-    const [showPassword, setShowPassword] = useState(false);
 
     const handleTogglePasswordVisibility = () => {
         setShowPassword(!showPassword);
@@ -34,22 +33,22 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         if (!validateEmail(formData.email)) {
             setError('Geçerli bir e-posta adresi girin.');
             return;
         }
-    
+
         try {
             const response = await axios.post('http://localhost:8000/login', formData);
-            if (response.data.success) {
-                // Kullanıcı doğrulandıysa ana sayfaya yönlendir
-                navigate('/home');
-            } else {
-                setError('Kullanıcı adı veya şifre hatalı.');
-            }
+            const { token } = response.data;
+            localStorage.setItem('token', token);
+            alert('Başarıyla giriş yaptınız!');
+            // Giriş başarılıysa, yönlendirme yapılabilir
+            navigate('/events'); // Anasayfaya yönlendir
         } catch (error) {
-            console.error('Giriş işlemi başarısız oldu:', error);
-            setError('Giriş işlemi başarısız oldu. Lütfen tekrar deneyin.');
+            console.error('Giriş yaparken bir hata oluştu:', error);
+            setError('Giriş yaparken bir hata oluştu. Lütfen tekrar deneyin.');
         }
     };
 
@@ -60,7 +59,7 @@ const Login = () => {
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label>E-posta:</label>
-                    <input type="email" name="email" value={formData.email}  onChange={handleInputChange} />
+                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} />
                 </div>
                 {error && <p className="error-message">{error}</p>}
 

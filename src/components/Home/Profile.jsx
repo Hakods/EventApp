@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from './Navbar';
-import "./Profile.css"
+import "./Profile.css";
 
 const Profile = () => {
     const [userData, setUserData] = useState(null);
@@ -10,14 +10,15 @@ const Profile = () => {
         gender: ''
     });
     const [isEditing, setIsEditing] = useState(false);
-    const [token, setToken] = useState(null); // Kullanıcının JWT'sini saklamak için state
+    const token = localStorage.getItem('token'); // localStorage'dan tokeni başlangıçta çek
 
+    // Kullanıcı verilerini getiren fonksiyon
     const fetchUserData = useCallback(async () => {
+        if (!token) {
+            console.error('Token bulunamadı');
+            return;
+        }
         try {
-            const storedToken = localStorage.getItem('token'); // localStorage'dan tokeni al
-            if (storedToken) {
-                setToken(storedToken); // localStorage'dan alınan tokeni state'e ayarla
-            }
             const response = await fetch('http://localhost:8000/user-profile', {
                 headers: {
                     'Authorization': `Bearer ${token}` // İsteği yaparken JWT'yi Authorization başlığı altında gönder
@@ -35,10 +36,12 @@ const Profile = () => {
         }
     }, [token]);
 
+    // Kullanıcı verilerini sayfa yüklendiğinde getir
     useEffect(() => {
         fetchUserData();
     }, [fetchUserData]);
 
+    // Input alanlarında değişiklikleri yöneten fonksiyon
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setUpdatedUserData(prevState => ({
@@ -47,16 +50,23 @@ const Profile = () => {
         }));
     };
 
+    // Düzenleme moduna geçişi yöneten fonksiyon
     const handleEditButtonClick = () => {
         setIsEditing(true);
     };
 
+    // Düzenlemeyi iptal eden fonksiyon
     const handleCancelEdit = () => {
         setIsEditing(false);
         setUpdatedUserData(userData); // Değişiklikleri iptal et ve orijinal verileri geri yükle
     };
 
+    // Değişiklikleri kaydeden fonksiyon
     const handleSaveChanges = async () => {
+        if (!token) {
+            console.error('Token bulunamadı');
+            return;
+        }
         try {
             const response = await fetch('http://localhost:8000/user-profile', {
                 method: 'PUT',
@@ -82,15 +92,47 @@ const Profile = () => {
             <Navbar />
             <div className="profile-container">
                 <h2>Profil</h2>
-                {userData && (
+                {userData ? (
                     <div className="user-info">
-                        <p><strong>Kullanıcı Adı:</strong> {isEditing ? <input type="text" name="username" value={updatedUserData.username} onChange={handleInputChange} /> : userData.username}</p>
-                        <p><strong>E-posta:</strong> {isEditing ? <input type="email" name="email" value={updatedUserData.email} onChange={handleInputChange} /> : userData.email}</p>
-                        <p><strong>Cinsiyet:</strong> {isEditing ? <select name="gender" value={updatedUserData.gender} onChange={handleInputChange}>
-                            <option value="male">Erkek</option>
-                            <option value="female">Kadın</option>
-                            <option value="other">Diğer</option>
-                        </select> : userData.gender}</p>
+                        <p>
+                            <strong>Kullanıcı Adı:</strong> {isEditing ? (
+                                <input
+                                    type="text"
+                                    name="username"
+                                    value={updatedUserData.username}
+                                    onChange={handleInputChange}
+                                />
+                            ) : (
+                                userData.username
+                            )}
+                        </p>
+                        <p>
+                            <strong>E-posta:</strong> {isEditing ? (
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={updatedUserData.email}
+                                    onChange={handleInputChange}
+                                />
+                            ) : (
+                                userData.email
+                            )}
+                        </p>
+                        <p>
+                            <strong>Cinsiyet:</strong> {isEditing ? (
+                                <select
+                                    name="gender"
+                                    value={updatedUserData.gender}
+                                    onChange={handleInputChange}
+                                >
+                                    <option value="male">Erkek</option>
+                                    <option value="female">Kadın</option>
+                                    <option value="other">Diğer</option>
+                                </select>
+                            ) : (
+                                userData.gender
+                            )}
+                        </p>
                         {isEditing ? (
                             <>
                                 <button onClick={handleSaveChanges}>Kaydet</button>
@@ -100,6 +142,8 @@ const Profile = () => {
                             <button onClick={handleEditButtonClick}>Düzenle</button>
                         )}
                     </div>
+                ) : (
+                    <p>Yükleniyor...</p>
                 )}
             </div>
         </div>
