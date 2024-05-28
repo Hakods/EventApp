@@ -94,7 +94,7 @@ app.get('/events', async (req, res) => {
 });
 
 // Etkinlik oluşturma
-app.post('/events', async (req, res) => {
+app.post('/home', async (req, res) => {
   const { eventName, eventDate, eventLocation, eventDescription, maxParticipants } = req.body;
 
   try {
