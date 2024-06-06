@@ -10,6 +10,13 @@ const Home = () => {
     const [maxParticipants, setMaxParticipants] = useState(0); // Maksimum katılımcı sayısı için state
 
     const handleEventCreation = async () => {
+        // Tarih geçmiş mi kontrolü
+        const today = new Date().toISOString().split('T')[0];
+        if (eventDate < today) {
+            alert('Geçmiş tarihli bir etkinlik oluşturamazsınız.');
+            return;
+        }
+
         if (!eventName || !eventDate || !eventLocation || !eventDescription || maxParticipants <= 0) {
             alert('Tüm etkinlik detaylarını ve maksimum katılımcı sayısını doldurunuz.');
             return;
@@ -20,6 +27,7 @@ const Home = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`, // Local storage'dan token'i al
                 },
                 body: JSON.stringify({
                     eventName,

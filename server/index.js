@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const User = require('./models/UserModel'); // Modeli import edin
+const User = require('./models/UserModel');
 const Event = require('./models/EventModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -24,6 +24,22 @@ app.use(cors());
 mongoose.connect('mongodb://localhost:27017/user', { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB bağlantısı başarılı'))
   .catch(err => console.error('MongoDB bağlantı hatası:', err));
+
+// Middleware: JWT Doğrulama
+const authMiddleware = (req, res, next) => {
+  const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : null;
+  if (!token) {
+    return res.status(401).json({ error: 'Yetkilendirme başarısız: Token bulunamadı.' });
+  }
+
+  jwt.verify(token, secret, (err, decodedToken) => {
+    if (err) {
+      return res.status(401).json({ error: 'Yetkilendirme başarısız: Geçersiz token.' });
+    }
+    req.userId = decodedToken.userId; // decodedToken içinden kullanıcı ID'sini al
+    next();
+  });
+};
 
 // Kullanıcı kaydı
 app.post('/register', async (req, res) => {
@@ -85,7 +101,7 @@ app.post('/login', async (req, res) => {
 // Etkinliklerin listelenmesi
 app.get('/events', async (req, res) => {
   try {
-    const events = await Event.find();
+    const events = await Event.find().populate('participants', 'username').populate('createdBy', 'username');
     res.status(200).json(events);
   } catch (error) {
     console.error('Etkinlikleri getirirken bir hata oluştu:', error);
@@ -94,7 +110,7 @@ app.get('/events', async (req, res) => {
 });
 
 // Etkinlik oluşturma
-app.post('/home', async (req, res) => {
+app.post('/home', authMiddleware, async (req, res) => {
   const { eventName, eventDate, eventLocation, eventDescription, maxParticipants } = req.body;
 
   try {
@@ -104,7 +120,8 @@ app.post('/home', async (req, res) => {
       eventLocation,
       eventDescription,
       maxParticipants,
-      participants: []
+      participants: [],
+      createdBy: req.userId
     });
 
     const savedEvent = await newEvent.save();
@@ -117,26 +134,20 @@ app.post('/home', async (req, res) => {
 });
 
 // Etkinliğe katılma
-const authenticateToken = (req, res, next) => {
-  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
-  if (!token) return res.sendStatus(401);
-
-  jwt.verify(token, secret, (err, decodedToken) => {
-    if (err) return res.sendStatus(403);
-    req.user = decodedToken;
-    next();
-  });
-};
-
-app.post('/events/:eventId/join', authenticateToken, async (req, res) => {
+app.post('/events/:eventId/join', authMiddleware, async (req, res) => {
   const eventId = req.params.eventId;
-  const userId = req.user.userId; // Authenticate middleware'den kullanıcı ID'sini alın
+  const userId = req.userId; // authMiddleware'den gelen userId
   try {
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({ message: 'Etkinlik bulunamadı' });
     }
-    
+
+    // Etkinliği oluşturan kişi kontrolü
+    if (event.createdBy.toString() === req.userId.toString()) {
+      return res.status(400).json({ message: 'Etkinliği oluşturan kişi etkinliğe katılamaz' });
+    }
+
     // Maksimum katılımcı sayısını kontrol et
     if (event.participants.length >= event.maxParticipants) {
       return res.status(400).json({ message: 'Etkinlik dolu' });
@@ -157,21 +168,41 @@ app.post('/events/:eventId/join', authenticateToken, async (req, res) => {
   }
 });
 
-// Middleware: JWT Doğrulama
-const authMiddleware = (req, res, next) => {
-  const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : null;
-  if (!token) {
-    return res.status(401).json({ error: 'Yetkilendirme başarısız: Token bulunamadı.' });
-  }
+// Katılımcıyı etkinlikten çıkarma
+app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (req, res) => {
+  const eventId = req.params.eventId;
+  const userIdToRemove = req.params.userId;
 
-  jwt.verify(token, secret, (err, decodedToken) => {
-    if (err) {
-      return res.status(401).json({ error: 'Yetkilendirme başarısız: Geçersiz token.' });
+  try {
+    // Etkinliği bul
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Etkinlik bulunamadı' });
     }
-    req.userId = decodedToken.userId;
-    next();
-  });
-};
+
+    // Etkinliği oluşturan kişi kontrolü
+    if (event.createdBy.toString() !== req.userId.toString()) {
+      return res.status(403).json({ message: 'Etkinliği sadece oluşturan kişi çıkarabilir' });
+    }
+
+    // Katılımcının etkinlikte olup olmadığını kontrol et
+    const participantIndex = event.participants.indexOf(userIdToRemove);
+    if (participantIndex === -1) {
+      return res.status(400).json({ message: 'Kullanıcı etkinlikte bulunmamaktadır' });
+    }
+
+    // Katılımcıyı etkinlikten çıkar
+    event.participants.splice(participantIndex, 1);
+    await event.save();
+
+    // Güncellenmiş etkinlik bilgilerini döndür
+    const updatedEvent = await Event.findById(eventId).populate('participants', 'username').populate('createdBy', 'username');
+    res.status(200).json({ message: 'Katılımcı etkinlikten başarıyla çıkarıldı', event: updatedEvent });
+  } catch (error) {
+    console.error('Katılımcıyı etkinlikten çıkarma işleminde bir hata oluştu:', error);
+    res.status(500).json({ message: 'Katılımcıyı etkinlikten çıkarma işlemi başarısız oldu' });
+  }
+});
 
 // Kullanıcı profili getirme endpoint'i
 app.get('/user-profile', authMiddleware, async (req, res) => {

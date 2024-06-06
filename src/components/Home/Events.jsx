@@ -4,6 +4,7 @@ import './Events.css';
 
 const Events = () => {
     const [events, setEvents] = useState([]);
+    const [user, setUser] = useState(null); // Kullanıcı bilgilerini saklamak için state
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -13,7 +14,26 @@ const Events = () => {
 
     useEffect(() => {
         fetchEvents();
+        fetchUser();
     }, []);
+
+    const fetchUser = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/user-profile', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (response.ok) {
+                const userData = await response.json();
+                setUser(userData);
+            } else {
+                console.error('Kullanıcı bilgilerini getirirken bir hata oluştu');
+            }
+        } catch (error) {
+            console.error('Sunucu ile iletişimde bir hata oluştu:', error);
+        }
+    };
 
     const fetchEvents = async () => {
         try {
@@ -29,7 +49,15 @@ const Events = () => {
         }
     };
 
-    const handleJoinEvent = async (eventId) => {
+    const handleJoinEvent = async (eventId, createdBy) => {
+        if (!user) {
+            alert('Lütfen giriş yapınız.');
+            return;
+        }
+        if (createdBy === user._id) {
+            alert('Etkinliği oluşturan kişi etkinliğe katılamaz.');
+            return;
+        }
         try {
             const response = await fetch(`http://localhost:8000/events/${eventId}/join`, {
                 method: 'POST',
@@ -40,13 +68,7 @@ const Events = () => {
                 body: JSON.stringify({})
             });
             if (response.ok) {
-                const updatedEvents = events.map(event => {
-                    if (event._id === eventId) {
-                        return { ...event, participants: [...event.participants, 'newParticipantId'] };
-                    }
-                    return event;
-                });
-                setEvents(updatedEvents);
+                fetchEvents(); // Etkinlikleri yeniden getir
             } else {
                 console.error('Etkinliğe katılma işleminde bir hata oluştu');
             }
@@ -55,9 +77,32 @@ const Events = () => {
         }
     };
 
-    
-    
-    
+    const handleRemoveParticipant = async (eventId, userId) => {
+        try {
+            const response = await fetch(`http://localhost:8000/events/${eventId}/remove-participant/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (response.ok) {
+                const updatedEvents = events.map(event => {
+                    if (event._id === eventId) {
+                        const updatedParticipants = event.participants.filter(participant => participant._id !== userId);
+                        return { ...event, participants: updatedParticipants };
+                    }
+                    return event;
+                });
+                setEvents(updatedEvents);
+            } else {
+                console.error('Kullanıcıyı etkinlikten çıkarırken bir hata oluştu');
+            }
+        } catch (error) {
+            console.error('Sunucu hatası:', error);
+        }
+    };
+
     return (
         <div>
             <Navbar />
@@ -70,10 +115,33 @@ const Events = () => {
                             <p><strong>Tarih:</strong> {formatDate(event.eventDate)}</p>
                             <p><strong>Yer:</strong> {event.eventLocation}</p>
                             <p><strong>Açıklama:</strong> {event.eventDescription}</p>
+                            <p><strong>Oluşturan Kişi:</strong> {event.createdBy ? event.createdBy.username : 'Bilinmiyor'}</p>
                             <p><strong>Katılımcı Sayısı:</strong> {event.participants.length} / {event.maxParticipants}</p>
+                            <p><strong>Katılımcılar:</strong></p>
+                            {event.participants.length > 0 ? (
+                                <ul>
+                                    {event.participants.map(participant => (
+                                        <li key={participant._id}>
+                                            {participant.username}
+                                            {event.createdBy && event.createdBy._id === localStorage.getItem('userId') && (
+                                                <button onClick={() => handleRemoveParticipant(event._id, participant._id)}>
+                                                    Katılımcıyı Sil
+                                                </button>
+                                            )}
+                                            {event.createdBy && event.createdBy._id !== localStorage.getItem('userId') && (
+                                                <span style={{ marginLeft: '8px', fontSize: '0.8em', color: '#888' }}>
+                                                    {participant._id === localStorage.getItem('userId') && '(Ben)'}
+                                                </span>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p>Henüz katılımcı yok.</p>
+                            )}
                             <button
-                                onClick={() => handleJoinEvent(event._id)}
-                                disabled={event.participants.length >= event.maxParticipants}
+                                onClick={() => handleJoinEvent(event._id, event.createdBy ? event.createdBy._id : null)}
+                                disabled={event.participants.length >= event.maxParticipants || !user}
                             >
                                 {event.participants.length >= event.maxParticipants ? 'Etkinlik Dolu' : 'Katıl'}
                             </button>

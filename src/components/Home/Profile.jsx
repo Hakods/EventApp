@@ -26,8 +26,13 @@ const Profile = () => {
             });
             if (response.ok) {
                 const userData = await response.json();
-                setUserData(userData);
-                setUpdatedUserData(userData);
+                // Cinsiyet değerini dönüştür
+                const translatedUserData = {
+                    ...userData,
+                    gender: userData.gender === 'male' ? 'Erkek' : userData.gender === 'female' ? 'Kadın' : 'Diğer'
+                };
+                setUserData(translatedUserData);
+                setUpdatedUserData(translatedUserData);
             } else {
                 console.error('Kullanıcı bilgilerini getirirken bir hata oluştu');
             }
@@ -67,6 +72,11 @@ const Profile = () => {
             console.error('Token bulunamadı');
             return;
         }
+        // Cinsiyet değerini İngilizceye geri çevir
+        const translatedData = {
+            ...updatedUserData,
+            gender: updatedUserData.gender === 'Erkek' ? 'male' : updatedUserData.gender === 'Kadın' ? 'female' : 'other'
+        };
         try {
             const response = await fetch('http://localhost:8000/user-profile', {
                 method: 'PUT',
@@ -74,7 +84,7 @@ const Profile = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}` // İsteği yaparken JWT'yi Authorization başlığı altında gönder
                 },
-                body: JSON.stringify(updatedUserData)
+                body: JSON.stringify(translatedData)
             });
             if (response.ok) {
                 setIsEditing(false);
@@ -125,21 +135,23 @@ const Profile = () => {
                                     value={updatedUserData.gender}
                                     onChange={handleInputChange}
                                 >
-                                    <option value="male">Erkek</option>
-                                    <option value="female">Kadın</option>
-                                    <option value="other">Diğer</option>
+                                    <option value="Erkek">Erkek</option>
+                                    <option value="Kadın">Kadın</option>
+                                    <option value="Diğer">Diğer</option>
                                 </select>
                             ) : (
                                 userData.gender
                             )}
                         </p>
                         {isEditing ? (
-                            <>
+                            <div className="button-container">
                                 <button onClick={handleSaveChanges}>Kaydet</button>
                                 <button onClick={handleCancelEdit}>İptal</button>
-                            </>
+                            </div>
                         ) : (
-                            <button onClick={handleEditButtonClick}>Düzenle</button>
+                            <div className="button-container">
+                                <button onClick={handleEditButtonClick}>Düzenle</button>
+                            </div>
                         )}
                     </div>
                 ) : (

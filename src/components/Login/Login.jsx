@@ -45,7 +45,7 @@ const Login = () => {
             localStorage.setItem('token', token);
             alert('Başarıyla giriş yaptınız!');
             // Giriş başarılıysa, yönlendirme yapılabilir
-            navigate('/events'); // Anasayfaya yönlendir
+            navigate('/home'); // Anasayfaya yönlendir
         } catch (error) {
             console.error('Giriş yaparken bir hata oluştu:', error);
             setError('Giriş yaparken bir hata oluştu. Lütfen tekrar deneyin.');

@@ -5,7 +5,6 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Register.css';
 
 const Register = () => {
-
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -37,28 +36,28 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         // E-posta adresinin geçerli olup olmadığını kontrol et
         if (!validateEmail(formData.email)) {
             setError('Geçerli bir e-posta adresi girin.');
             return;
         }
-
+    
         // Diğer alanların geçerliliğini kontrol et
         if (!validatePassword(formData.password)) {
             setError('Şifreniz en az 8 karakter uzunluğunda olmalıdır ve en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.');
             return;
         }
-
+    
         if (formData.password !== formData.confirmPassword) {
             setError('Şifreleriniz eşleşmiyor.');
             return;
         }
-
+    
         try {
             // Backend'e kayıt isteği gönder
             const response = await axios.post('http://localhost:8000/register', formData);
-
+    
             // Başarılı kayıt durumunda giriş sayfasına yönlendir
             if (response.status === 201) {
                 navigate('/login');
@@ -66,11 +65,12 @@ const Register = () => {
                 setError('Bir hata oluştu. Lütfen tekrar deneyin.');
             }
         } catch (error) {
-            console.error('Kayıt işlemi başarısız oldu:', error);
-            setError('Kayıt işlemi başarısız oldu. Lütfen tekrar deneyin.');
+            console.error('Kayıt işlemi başarısız oldu:', error.response?.data || error.message);
+            setError(error.response?.data || 'Kayıt işlemi başarısız oldu. Lütfen tekrar deneyin.');
         }
     };
-
+    
+    
 
     const validateEmail = (email) => {
         const re = /\S+@\S+\.\S+/;
@@ -103,7 +103,6 @@ const Register = () => {
                         </button>
                     </div>
                 </div>
-                {error && <p className="error-message">{error}</p>}
                 <div className="form-group">
                     <label>Şifre Tekrar:</label>
                     <div className="password-input">
@@ -126,6 +125,7 @@ const Register = () => {
                         </label>
                     </div>
                 </div>
+                {error && <p className="error-message">{error}</p>}
                 <button type="submit">Kayıt Ol</button>
             </form>
             <p>Üye misiniz? <Link to="/login">Giriş yapın.</Link></p>
