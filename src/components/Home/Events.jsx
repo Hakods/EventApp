@@ -27,6 +27,7 @@ const Events = () => {
             if (response.ok) {
                 const userData = await response.json();
                 setUser(userData);
+                localStorage.setItem('userId', userData._id); // userId'yi localStorage'a kaydediyoruz
             } else {
                 console.error('Kullanıcı bilgilerini getirirken bir hata oluştu');
             }
@@ -58,6 +59,12 @@ const Events = () => {
             alert('Etkinliği oluşturan kişi etkinliğe katılamaz.');
             return;
         }
+        // Kullanıcının zaten katılımcı olup olmadığını kontrol et
+        const event = events.find(event => event._id === eventId);
+        if (event && event.participants.some(participant => participant._id === user._id)) {
+            alert('Bu etkinliğe zaten katıldınız.');
+            return;
+        }
         try {
             const response = await fetch(`http://localhost:8000/events/${eventId}/join`, {
                 method: 'POST',
@@ -78,6 +85,16 @@ const Events = () => {
     };
 
     const handleRemoveParticipant = async (eventId, userId) => {
+        const reason = prompt('Ne için kullanıcıyı atmak istiyorsunuz?');
+        if (!reason) {
+            alert('Lütfen bir neden girin.');
+            return;
+        }
+
+        const confirmation = window.confirm(`Kullanıcıyı şu nedenle atmak istediğinizden emin misiniz: "${reason}"?`);
+        if (!confirmation) return;
+
+
         try {
             const response = await fetch(`http://localhost:8000/events/${eventId}/remove-participant/${userId}`, {
                 method: 'POST',
@@ -103,6 +120,7 @@ const Events = () => {
         }
     };
 
+
     return (
         <div>
             <Navbar />
@@ -123,14 +141,17 @@ const Events = () => {
                                     {event.participants.map(participant => (
                                         <li key={participant._id}>
                                             {participant.username}
-                                            {event.createdBy && event.createdBy._id === localStorage.getItem('userId') && (
-                                                <button onClick={() => handleRemoveParticipant(event._id, participant._id)}>
-                                                    Katılımcıyı Sil
+                                            {event.createdBy && event.createdBy._id === user?._id && (
+                                                <button
+                                                    className="remove-participant-btn" id='remove'
+                                                    onClick={() => handleRemoveParticipant(event._id, participant._id)}
+                                                >
+                                                    &times;
                                                 </button>
                                             )}
-                                            {event.createdBy && event.createdBy._id !== localStorage.getItem('userId') && (
+                                            {participant._id === user?._id && (
                                                 <span style={{ marginLeft: '8px', fontSize: '0.8em', color: '#888' }}>
-                                                    {participant._id === localStorage.getItem('userId') && '(Ben)'}
+                                                    (Ben)
                                                 </span>
                                             )}
                                         </li>

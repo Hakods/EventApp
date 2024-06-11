@@ -56,3 +56,21 @@
   background-color: #ccc;
   cursor: not-allowed;
 }
+#remove {
+
+  background: none;
+  border: none;
+  color: red;
+  font-size: 1.2em; /* Daha belirgin hale getirmek için font boyutunu artırdık */
+  cursor: pointer;
+  padding: 0;
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease; /* Renk geçiş efekti */
+}
+
+#remove:hover {
+  color: darkred; /* Fare üzerine gelindiğinde renk değişimi */
+}

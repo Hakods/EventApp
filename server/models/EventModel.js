@@ -1,9 +1,6 @@
-// models/EventModel.js
-
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-const eventSchema = new Schema({
+const eventSchema = new mongoose.Schema({
   eventName: {
     type: String,
     required: true
@@ -24,17 +21,23 @@ const eventSchema = new Schema({
     type: Number,
     required: true
   },
-  participants: [{
-    type: Schema.Types.ObjectId,
-    ref: 'User'
-  }],
+  participants: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  ],
   createdBy: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
-  }
-}, { timestamps: true });
+  },
+  bannedParticipants: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  ]
+});
 
-const Event = mongoose.model('Event', eventSchema);
-
-module.exports = Event;
+module.exports = mongoose.model('Event', eventSchema);

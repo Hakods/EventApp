@@ -7,6 +7,7 @@ const Event = require('./models/EventModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
+const nodemailer = require('nodemailer');
 
 const app = express();
 
@@ -195,6 +196,13 @@ app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (r
     event.participants.splice(participantIndex, 1);
     await event.save();
 
+    // E-posta gönderme
+    const user = await User.findById(userIdToRemove);
+    const mailSent = await sendEmailToParticipant(user.email, event.eventName, 'Etkinlikten çıkarıldınız.');
+    if (!mailSent) {
+      console.error('Kullanıcıya bildirim e-postası gönderilemedi');
+    }
+
     // Güncellenmiş etkinlik bilgilerini döndür
     const updatedEvent = await Event.findById(eventId).populate('participants', 'username').populate('createdBy', 'username');
     res.status(200).json({ message: 'Katılımcı etkinlikten başarıyla çıkarıldı', event: updatedEvent });
@@ -232,6 +240,37 @@ app.put('/user-profile', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Sunucu hatası: Kullanıcı bilgileri güncellenemedi.' });
   }
 });
+
+// E-posta gönderme işlevi
+const sendEmailToParticipant = async (recipientEmail, eventName, reason) => {
+  try {
+    // SMTP ayarları
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      auth: {
+        user: process.env.EMAIL_USERNAME, // Ethereal mail hesabınızın kullanıcı adı
+        pass: process.env.EMAIL_PASSWORD  // Ethereal mail hesabınızın şifresi
+      }
+    });
+
+    // E-posta içeriği
+    const mailOptions = {
+      from: process.env.EMAIL_USERNAME, // Absender e-mail address
+      to: recipientEmail,
+      subject: 'Etkinlikten çıkarıldınız',
+      text: `Merhaba,\n\n${eventName} etkinliğinden çıkarıldınız. Sebep: ${reason}\n\nEtkinlik Adı: ${eventName}`
+    };
+
+    // E-postayı gönder
+    const info = await transporter.sendMail(mailOptions);
+    console.log('E-posta gönderildi: ', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('E-posta gönderme işleminde hata oluştu:', error);
+    return false;
+  }
+};
 
 // Port dinleme
 const PORT = process.env.PORT || 8000;
