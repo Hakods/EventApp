@@ -241,6 +241,23 @@ app.put('/user-profile', authMiddleware, async (req, res) => {
   }
 });
 
+// Etkinlik detaylarını getirme
+app.get('/events/:eventId', async (req, res) => {
+  const eventId = req.params.eventId;
+  
+  try {
+    const event = await Event.findById(eventId).populate('participants', 'username').populate('createdBy', 'username');
+    if (!event) {
+      return res.status(404).json({ message: 'Etkinlik bulunamadı' });
+    }
+    res.status(200).json(event);
+  } catch (error) {
+    console.error('Etkinlik detaylarını getirirken bir hata oluştu:', error);
+    res.status(500).json({ message: 'Etkinlik detaylarını getirirken bir hata oluştu' });
+  }
+});
+
+
 // E-posta gönderme işlevi
 const sendEmailToParticipant = async (recipientEmail, eventName, reason) => {
   try {
