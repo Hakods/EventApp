@@ -1,0 +1,72 @@
+.event-details-container {
+  margin: 20px auto;
+  max-width: 800px;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.event-details-container h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.event-details-container p {
+  font-size: 1rem;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.event-details-container p strong {
+  font-weight: bold;
+}
+
+.event-details-container ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.event-details-container ul li {
+  background-color: #e9e9e9;
+  margin-bottom: 5px;
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.loading,
+.error {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #777;
+  margin-top: 20px;
+}
+
+.event-details-container button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+}
+
+.event-details-container button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.remove-participant-btn {
+  background: none;
+  border: none;
+  color: #f00;
+  cursor: pointer;
+  font-size: 1.2rem;
+  margin-left: 10px;
+}

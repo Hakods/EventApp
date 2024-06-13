@@ -2,10 +2,10 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Register from './components/Register/Register';
 import Login from './components/Login/Login';
-import Home from './components/Home/Home';
-import Events from './components/Home/Events';
-import Profile from './components/Home/Profile';
-import EventDetails from './components/Home/EventDetails';
+import Home from './components/Layout/Home/Home';
+import Events from './components/Layout/Events/Events';
+import Profile from './components/Layout/Profile/Profile';
+import EventDetails from './components/Layout/EventDetails/EventDetails';
 
 
 function App() {

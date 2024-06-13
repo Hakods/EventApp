@@ -169,10 +169,42 @@ app.post('/events/:eventId/join', authMiddleware, async (req, res) => {
   }
 });
 
+// Etkinlikten katılımı kaldırma
+app.post('/events/:eventId/leave', authMiddleware, async (req, res) => {
+  const eventId = req.params.eventId;
+  const userId = req.userId;
+
+  try {
+    // Etkinliği bul
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Etkinlik bulunamadı' });
+    }
+
+    // Kullanıcının etkinlikte olup olmadığını kontrol et
+    const participantIndex = event.participants.indexOf(userId);
+    if (participantIndex === -1) {
+      return res.status(400).json({ message: 'Kullanıcı etkinlikte bulunmamaktadır' });
+    }
+
+    // Kullanıcıyı etkinlikten çıkar
+    event.participants.splice(participantIndex, 1);
+    await event.save();
+
+    // Güncellenmiş etkinlik bilgilerini döndür
+    const updatedEvent = await Event.findById(eventId).populate('participants', 'username').populate('createdBy', 'username');
+    res.status(200).json({ message: 'Etkinlikten başarıyla çıkarıldı', event: updatedEvent });
+  } catch (error) {
+    console.error('Etkinlikten çıkarma işleminde bir hata oluştu:', error);
+    res.status(500).json({ message: 'Etkinlikten çıkarma işlemi başarısız oldu' });
+  }
+});
+
 // Katılımcıyı etkinlikten çıkarma
 app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (req, res) => {
   const eventId = req.params.eventId;
   const userIdToRemove = req.params.userId;
+  const { reason } = req.body;
 
   try {
     // Etkinliği bul
@@ -187,7 +219,7 @@ app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (r
     }
 
     // Katılımcının etkinlikte olup olmadığını kontrol et
-    const participantIndex = event.participants.indexOf(userIdToRemove);
+    const participantIndex = event.participants.findIndex(participant => participant.toString() === userIdToRemove);
     if (participantIndex === -1) {
       return res.status(400).json({ message: 'Kullanıcı etkinlikte bulunmamaktadır' });
     }
@@ -198,7 +230,10 @@ app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (r
 
     // E-posta gönderme
     const user = await User.findById(userIdToRemove);
-    const mailSent = await sendEmailToParticipant(user.email, event.eventName, 'Etkinlikten çıkarıldınız.');
+    if (!user) {
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+    }
+    const mailSent = await sendEmailToParticipant(user.email, event.eventName, reason);
     if (!mailSent) {
       console.error('Kullanıcıya bildirim e-postası gönderilemedi');
     }
@@ -211,6 +246,7 @@ app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (r
     res.status(500).json({ message: 'Katılımcıyı etkinlikten çıkarma işlemi başarısız oldu' });
   }
 });
+
 
 // Kullanıcı profili getirme endpoint'i
 app.get('/user-profile', authMiddleware, async (req, res) => {
@@ -244,7 +280,7 @@ app.put('/user-profile', authMiddleware, async (req, res) => {
 // Etkinlik detaylarını getirme
 app.get('/events/:eventId', async (req, res) => {
   const eventId = req.params.eventId;
-  
+
   try {
     const event = await Event.findById(eventId).populate('participants', 'username').populate('createdBy', 'username');
     if (!event) {
@@ -294,3 +330,4 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server başlatıldı, http://localhost:${PORT}`);
 });
+

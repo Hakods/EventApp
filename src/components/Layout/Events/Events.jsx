@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from './Navbar';
+import Navbar from '../Navbar/Navbar';
 import './Events.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -79,22 +79,52 @@ const Events = () => {
         }
     };
 
-    const handleRemoveParticipant = async (eventId, userId) => {
-        const reason = prompt('Ne için kullanıcıyı atmak istiyorsunuz?');
-        if (!reason) return;
+    const handleLeaveEvent = async (eventId) => {
+        const confirm = window.confirm('Etkinlikten çıkmak istediğinizden emin misiniz?');
+        if (!confirm) return;
+    
+        try {
+            const response = await fetch(`http://localhost:8000/events/${eventId}/leave`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+    
+            if (response.ok) {
+                const updatedEvents = events.map(event => {
+                    if (event._id === eventId) {
+                        const updatedParticipants = event.participants.filter(participant => participant._id !== user._id);
+                        return { ...event, participants: updatedParticipants };
+                    }
+                    return event;
+                });
+                setEvents(updatedEvents);
+            } else {
+                console.error('Etkinlikten çıkma işleminde bir hata oluştu');
+            }
+        } catch (error) {
+            console.error('Sunucu ile iletişimde bir hata oluştu:', error);
+        }
+    };
 
+    const handleRemoveParticipant = async (eventId, userId, createdBy) => {
+        const reason = prompt('Katılımcıyı etkinlikten çıkarma sebebinizi girin:');
+        if (!reason) return;
+    
         const confirm = window.confirm('Bu kullanıcıyı etkinlikten çıkarmak istediğinizden emin misiniz?');
         if (!confirm) return;
-
+    
         try {
             const response = await fetch(`http://localhost:8000/events/${eventId}/remove-participant/${userId}`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ reason })
+                body: JSON.stringify({ reason, createdBy })
             });
-
+    
             if (response.ok) {
                 const updatedEvents = events.map(event => {
                     if (event._id === eventId) {
@@ -105,7 +135,7 @@ const Events = () => {
                 });
                 setEvents(updatedEvents);
             } else {
-                console.error('Kullanıcıyı etkinlikten çıkarırken bir hata oluştu');
+                console.error('Kullanıcıyı etkinlikten çıkarma işleminde bir hata oluştu');
             }
         } catch (error) {
             console.error('Sunucu hatası:', error);
@@ -138,10 +168,10 @@ const Events = () => {
                                             {participant.username}
                                             {event.createdBy && event.createdBy._id === localStorage.getItem('userId') && (
                                                 <button
-                                                    className="remove-participant-btn" id='remove'
+                                                    className="remove-participant-btn"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleRemoveParticipant(event._id, participant._id);
+                                                        handleRemoveParticipant(event._id, participant._id, event.createdBy._id);
                                                     }}
                                                 >
                                                     &#10005;
@@ -158,15 +188,30 @@ const Events = () => {
                             ) : (
                                 <p>Henüz katılımcı yok.</p>
                             )}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleJoinEvent(event._id, event.createdBy ? event.createdBy._id : null);
-                                }}
-                                disabled={event.participants.length >= event.maxParticipants || (user && event.createdBy && event.createdBy._id === user._id)}
-                            >
-                                Katıl
-                            </button>
+                            {user && (
+                                <div className="button-container">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleJoinEvent(event._id, event.createdBy ? event.createdBy._id : null);
+                                        }}
+                                        disabled={event.participants.length >= event.maxParticipants || (user && event.createdBy && event.createdBy._id === user._id)}
+                                    >
+                                        Katıl
+                                    </button>
+                                    {event.participants.find(participant => participant._id === user._id) && (
+                                        <button
+                                            className="leave-event-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleLeaveEvent(event._id);
+                                            }}
+                                        >
+                                            Etkinlikten Çık
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

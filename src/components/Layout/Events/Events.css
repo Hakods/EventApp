@@ -1,5 +1,3 @@
-/* Events.css */
-
 .event-list-container {
   margin: 20px auto;
   max-width: 1000px;
@@ -56,8 +54,8 @@
   background-color: #ccc;
   cursor: not-allowed;
 }
-#remove {
 
+.event-card .remove-participant-btn {
   background: none;
   border: none;
   color: red;
@@ -71,6 +69,26 @@
   transition: color 0.3s ease; /* Renk geçiş efekti */
 }
 
-#remove:hover {
+.event-card .remove-participant-btn:hover {
   color: darkred; /* Fare üzerine gelindiğinde renk değişimi */
+}
+
+.event-card .button-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.event-card .leave-event-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-left: 10px;
+}
+
+.event-card .leave-event-btn:hover {
+  background-color: #c82333;
 }
