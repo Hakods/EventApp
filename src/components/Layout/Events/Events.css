@@ -7,7 +7,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   grid-gap: 20px;
-  justify-content: space-between; /* Kartları satırda iki kenara doğru hizala */
+  justify-content: space-between;
 }
 
 .event-card {
@@ -15,11 +15,11 @@
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  transition: transform 0.3s ease; /* Geçiş efekti */
+  transition: transform 0.3s ease;
 }
 
 .event-card:hover {
-  transform: translateY(-5px); /* Fare üzerine gelindiğinde hafifçe yukarı kaldır */
+  transform: translateY(-5px);
 }
 
 .event-card h3 {
@@ -47,7 +47,7 @@
   border-radius: 5px;
   padding: 8px 16px;
   cursor: pointer;
-  transition: background-color 0.3s ease; /* Geçiş efekti */
+  transition: background-color 0.3s ease;
 }
 
 .event-card button:disabled {
@@ -59,18 +59,18 @@
   background: none;
   border: none;
   color: red;
-  font-size: 1.2em; /* Daha belirgin hale getirmek için font boyutunu artırdık */
+  font-size: 1.2em;
   cursor: pointer;
   padding: 0;
   margin-left: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.3s ease; /* Renk geçiş efekti */
+  transition: color 0.3s ease;
 }
 
 .event-card .remove-participant-btn:hover {
-  color: darkred; /* Fare üzerine gelindiğinde renk değişimi */
+  color: darkred;
 }
 
 .event-card .button-container {
@@ -78,6 +78,7 @@
   justify-content: space-between;
   margin-top: 10px;
 }
+
 .event-card .leave-event-btn {
   background-color: #dc3545;
   color: white;

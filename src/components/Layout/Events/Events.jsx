@@ -15,8 +15,12 @@ const Events = () => {
     };
 
     useEffect(() => {
-        fetchEvents();
-        fetchUser();
+        const fetchUserAndEvents = async () => {
+            await fetchUser();
+            await fetchEvents();
+        };
+
+        fetchUserAndEvents();
     }, []);
 
     const fetchUser = async () => {
@@ -82,7 +86,7 @@ const Events = () => {
     const handleLeaveEvent = async (eventId) => {
         const confirm = window.confirm('Etkinlikten çıkmak istediğinizden emin misiniz?');
         if (!confirm) return;
-    
+
         try {
             const response = await fetch(`http://localhost:8000/events/${eventId}/leave`, {
                 method: 'POST',
@@ -90,7 +94,7 @@ const Events = () => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
-    
+
             if (response.ok) {
                 const updatedEvents = events.map(event => {
                     if (event._id === eventId) {
@@ -108,44 +112,55 @@ const Events = () => {
         }
     };
 
-    const handleRemoveParticipant = async (eventId, userId, createdBy) => {
-        const reason = prompt('Katılımcıyı etkinlikten çıkarma sebebinizi girin:');
+    const handleRemoveParticipant = async (eventId, userId, username) => {
+        const reason = prompt(`"${username}" kullanıcısını etkinlikten çıkarmak istediğinizin sebebini yazınız:`);
         if (!reason) return;
-    
-        const confirm = window.confirm('Bu kullanıcıyı etkinlikten çıkarmak istediğinizden emin misiniz?');
+
+        const confirm = window.confirm(`"${username}" kullanıcısını etkinlikten "${reason}" sebebi yüzünden çıkarmak istediğinizden emin misiniz?`);
         if (!confirm) return;
-    
+
+        const token = localStorage.getItem('token');
         try {
-            const response = await fetch(`http://localhost:8000/events/${eventId}/remove-participant/${userId}`, {
+            await fetch(`http://localhost:8000/events/${eventId}/remove-participant/${userId}`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ reason, createdBy })
+                    'Authorization': `Bearer ${token}`
+                }
             });
-    
-            if (response.ok) {
-                const updatedEvents = events.map(event => {
-                    if (event._id === eventId) {
-                        const updatedParticipants = event.participants.filter(participant => participant._id !== userId);
-                        return { ...event, participants: updatedParticipants };
-                    }
-                    return event;
-                });
-                setEvents(updatedEvents);
-            } else {
-                console.error('Kullanıcıyı etkinlikten çıkarma işleminde bir hata oluştu');
-            }
+            // Etkinlikleri yeniden getir
+            fetchEvents();
         } catch (error) {
-            console.error('Sunucu hatası:', error);
+            console.error('Katılımcıyı etkinlikten çıkarırken bir hata oluştu:', error);
         }
     };
+    // const handleCardClick = (eventId) => {
+    //     navigate(`/event/${eventId}`);
+    // };
 
-    const handleCardClick = (eventId) => {
-        navigate(`/event/${eventId}`);
+    const sendNotificationEmail = async (username, reason) => {
+        try {
+            const response = await fetch('http://localhost:8000/send-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    recipient: user.email, // veya başka bir e-posta alanı
+                    subject: 'Etkinlikten Atıldınız',
+                    message: `Merhaba ${username},\n\nEtkinlikten şu nedenle atıldınız: ${reason}\n\nEtkinlik Yönetimi`
+                })
+            });
+            if (response.ok) {
+                console.log('Bildirim e-postası gönderildi');
+            } else {
+                console.error('Bildirim e-postası gönderilirken bir hata oluştu');
+            }
+        } catch (error) {
+            console.error('E-posta gönderirken bir hata oluştu:', error);
+        }
     };
-
+ 
     return (
         <div>
             <Navbar />
@@ -153,7 +168,8 @@ const Events = () => {
                 <h2>Etkinlikler</h2>
                 <div className="event-cards">
                     {events.map(event => (
-                        <div key={event._id} className="event-card" onClick={() => handleCardClick(event._id)}>
+                        // onClick={() => handleCardClick(event._id)}
+                        <div key={event._id} className="event-card" >
                             <h3>{event.eventName}</h3>
                             <p><strong>Tarih:</strong> {formatDate(event.eventDate)}</p>
                             <p><strong>Yer:</strong> {event.eventLocation}</p>
@@ -166,20 +182,20 @@ const Events = () => {
                                     {event.participants.map(participant => (
                                         <li key={participant._id}>
                                             {participant.username}
-                                            {event.createdBy && event.createdBy._id === localStorage.getItem('userId') && (
+                                            {event.createdBy && event.createdBy._id === user?._id && (
                                                 <button
                                                     className="remove-participant-btn"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleRemoveParticipant(event._id, participant._id, event.createdBy._id);
+                                                        handleRemoveParticipant(event._id, participant._id, participant.username);
                                                     }}
                                                 >
                                                     &#10005;
                                                 </button>
                                             )}
-                                            {event.createdBy && event.createdBy._id !== localStorage.getItem('userId') && (
+                                            {event.createdBy && event.createdBy._id !== user?._id && (
                                                 <span style={{ marginLeft: '8px', fontSize: '0.8em', color: '#888' }}>
-                                                    {participant._id === localStorage.getItem('userId') && '(Ben)'}
+                                                    {participant._id === user?._id && '(Ben)'}
                                                 </span>
                                             )}
                                         </li>

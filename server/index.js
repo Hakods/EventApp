@@ -7,7 +7,7 @@ const Event = require('./models/EventModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
-const nodemailer = require('nodemailer');
+const sendEmail = require('../src/components/sendEmail'); // E-posta gönderme fonksiyonu
 
 const app = express();
 
@@ -246,8 +246,6 @@ app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (r
     res.status(500).json({ message: 'Katılımcıyı etkinlikten çıkarma işlemi başarısız oldu' });
   }
 });
-
-
 // Kullanıcı profili getirme endpoint'i
 app.get('/user-profile', authMiddleware, async (req, res) => {
   try {
@@ -294,34 +292,27 @@ app.get('/events/:eventId', async (req, res) => {
 });
 
 
-// E-posta gönderme işlevi
-const sendEmailToParticipant = async (recipientEmail, eventName, reason) => {
+const sendNotificationEmail = async (username, reason) => {
   try {
-    // SMTP ayarları
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      auth: {
-        user: process.env.EMAIL_USERNAME, // Ethereal mail hesabınızın kullanıcı adı
-        pass: process.env.EMAIL_PASSWORD  // Ethereal mail hesabınızın şifresi
+      const response = await fetch('http://localhost:8000/send-email', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+              recipient: user.email, // veya başka bir e-posta alanı
+              subject: 'Etkinlikten Atıldınız',
+              message: `Merhaba ${username},\n\nEtkinlikten şu nedenle atıldınız: ${reason}\n\nEtkinlik Yönetimi`
+          })
+      });
+      if (response.ok) {
+          console.log('Bildirim e-postası gönderildi');
+      } else {
+          console.error('Bildirim e-postası gönderilirken bir hata oluştu');
       }
-    });
-
-    // E-posta içeriği
-    const mailOptions = {
-      from: process.env.EMAIL_USERNAME, // Absender e-mail address
-      to: recipientEmail,
-      subject: 'Etkinlikten çıkarıldınız',
-      text: `Merhaba,\n\n${eventName} etkinliğinden çıkarıldınız. Sebep: ${reason}\n\nEtkinlik Adı: ${eventName}`
-    };
-
-    // E-postayı gönder
-    const info = await transporter.sendMail(mailOptions);
-    console.log('E-posta gönderildi: ', info.messageId);
-    return true;
   } catch (error) {
-    console.error('E-posta gönderme işleminde hata oluştu:', error);
-    return false;
+      console.error('E-posta gönderirken bir hata oluştu:', error);
   }
 };
 
