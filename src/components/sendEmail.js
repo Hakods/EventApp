@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 // E-posta gönderim ayarları
 const transporter = nodemailer.createTransport({
     service: 'gmail',
+    secure: true,
     auth: {
         user: 'hakodss20@gmail.com',
         pass: 'yyud wmip ypbb rgbf'

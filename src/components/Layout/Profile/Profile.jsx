@@ -66,7 +66,6 @@ const Profile = () => {
         setUpdatedUserData(userData); // Değişiklikleri iptal et ve orijinal verileri geri yükle
     };
 
-    // Değişiklikleri kaydeden fonksiyon
     const handleSaveChanges = async () => {
         if (!token) {
             console.error('Token bulunamadı');
@@ -77,6 +76,7 @@ const Profile = () => {
             ...updatedUserData,
             gender: updatedUserData.gender === 'Erkek' ? 'male' : updatedUserData.gender === 'Kadın' ? 'female' : 'other'
         };
+        console.log('Güncelleme için gönderilen veriler:', translatedData); // Debug için eklenen log
         try {
             const response = await fetch('http://localhost:8000/user-profile', {
                 method: 'PUT',
@@ -90,12 +90,15 @@ const Profile = () => {
                 setIsEditing(false);
                 fetchUserData(); // Verileri güncelle
             } else {
-                console.error('Kullanıcı bilgilerini güncellerken bir hata oluştu');
+                const errorData = await response.json();
+                console.error('Kullanıcı bilgilerini güncellerken bir hata oluştu', errorData);
             }
         } catch (error) {
             console.error('Sunucu ile iletişimde bir hata oluştu:', error);
         }
     };
+    
+    
 
     return (
         <div>

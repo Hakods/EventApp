@@ -200,6 +200,7 @@ app.post('/events/:eventId/leave', authMiddleware, async (req, res) => {
   }
 });
 
+
 // Katılımcıyı etkinlikten çıkarma
 app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (req, res) => {
   const eventId = req.params.eventId;
@@ -215,35 +216,32 @@ app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (r
 
     // Etkinliği oluşturan kişi kontrolü
     if (event.createdBy.toString() !== req.userId.toString()) {
-      return res.status(403).json({ message: 'Etkinliği sadece oluşturan kişi çıkarabilir' });
+      return res.status(403).json({ message: 'Sadece etkinlik sahibi katılımcıyı çıkarabilir' });
     }
 
-    // Katılımcının etkinlikte olup olmadığını kontrol et
-    const participantIndex = event.participants.findIndex(participant => participant.toString() === userIdToRemove);
+    // Kullanıcının etkinlikte olup olmadığını kontrol et
+    const participantIndex = event.participants.indexOf(userIdToRemove);
     if (participantIndex === -1) {
       return res.status(400).json({ message: 'Kullanıcı etkinlikte bulunmamaktadır' });
     }
 
-    // Katılımcıyı etkinlikten çıkar
+    // Kullanıcıyı etkinlikten çıkar
     event.participants.splice(participantIndex, 1);
     await event.save();
 
-    // E-posta gönderme
-    const user = await User.findById(userIdToRemove);
-    if (!user) {
-      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
-    }
-    const mailSent = await sendEmailToParticipant(user.email, event.eventName, reason);
-    if (!mailSent) {
-      console.error('Kullanıcıya bildirim e-postası gönderilemedi');
+    // Çıkarılan kullanıcıya e-posta gönderme işlemi
+    const removedUser = await User.findById(userIdToRemove);
+    if (removedUser) {
+      const emailSubject = 'Etkinlikten çıkarıldınız';
+      const emailBody = `Merhaba ${removedUser.username},\n\n ${event.eventName} etkinliğinden çıkarıldınız.\nNeden: ${reason}\n\nSaygılarımızla,\nEtkinlik Yönetimi`;
+      sendEmail(removedUser.email, emailSubject, emailBody); // E-posta gönderme fonksiyonu
+      console.log('E-posta gönderildi:', emailBody);
     }
 
-    // Güncellenmiş etkinlik bilgilerini döndür
-    const updatedEvent = await Event.findById(eventId).populate('participants', 'username').populate('createdBy', 'username');
-    res.status(200).json({ message: 'Katılımcı etkinlikten başarıyla çıkarıldı', event: updatedEvent });
+    res.status(200).json({ message: 'Kullanıcı etkinlikten başarıyla çıkarıldı' });
   } catch (error) {
-    console.error('Katılımcıyı etkinlikten çıkarma işleminde bir hata oluştu:', error);
-    res.status(500).json({ message: 'Katılımcıyı etkinlikten çıkarma işlemi başarısız oldu' });
+    console.error('Kullanıcıyı etkinlikten çıkarma işleminde bir hata oluştu:', error);
+    res.status(500).json({ message: 'Kullanıcıyı etkinlikten çıkarma işlemi başarısız oldu' });
   }
 });
 // Kullanıcı profili getirme endpoint'i
@@ -264,16 +262,23 @@ app.get('/user-profile', authMiddleware, async (req, res) => {
 app.put('/user-profile', authMiddleware, async (req, res) => {
   try {
     const updatedUserData = req.body;
+    console.log('Güncellenen kullanıcı verileri:', updatedUserData); // Debug için eklenen log
+
+    // Veritabanı güncelleme işlemi
     const user = await User.findByIdAndUpdate(req.userId, updatedUserData, { new: true }).select('-password'); // Şifreyi döndürmemek için
+
     if (!user) {
       return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
     }
+
     res.json({ message: 'Kullanıcı bilgileri başarıyla güncellendi.', user });
   } catch (error) {
-    console.error('Kullanıcı bilgilerini güncellerken bir hata oluştu:', error);
+    console.error('Kullanıcı bilgilerini güncellerken bir hata oluştu:', error.message); // Daha ayrıntılı hata mesajı
+    console.error(error); // Hatanın tamamını loglayın
     res.status(500).json({ error: 'Sunucu hatası: Kullanıcı bilgileri güncellenemedi.' });
   }
 });
+
 
 // Etkinlik detaylarını getirme
 app.get('/events/:eventId', async (req, res) => {
@@ -292,33 +297,9 @@ app.get('/events/:eventId', async (req, res) => {
 });
 
 
-const sendNotificationEmail = async (username, reason) => {
-  try {
-      const response = await fetch('http://localhost:8000/send-email', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-              recipient: user.email, // veya başka bir e-posta alanı
-              subject: 'Etkinlikten Atıldınız',
-              message: `Merhaba ${username},\n\nEtkinlikten şu nedenle atıldınız: ${reason}\n\nEtkinlik Yönetimi`
-          })
-      });
-      if (response.ok) {
-          console.log('Bildirim e-postası gönderildi');
-      } else {
-          console.error('Bildirim e-postası gönderilirken bir hata oluştu');
-      }
-  } catch (error) {
-      console.error('E-posta gönderirken bir hata oluştu:', error);
-  }
-};
 
 // Port dinleme
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server başlatıldı, http://localhost:${PORT}`);
 });
-

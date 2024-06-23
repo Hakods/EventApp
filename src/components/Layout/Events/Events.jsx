@@ -121,21 +121,25 @@ const Events = () => {
 
         const token = localStorage.getItem('token');
         try {
-            await fetch(`http://localhost:8000/events/${eventId}/remove-participant/${userId}`, {
+            const response = await fetch(`http://localhost:8000/events/${eventId}/remove-participant/${userId}`, {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                body: JSON.stringify({ reason })
             });
-            // Etkinlikleri yeniden getir
-            fetchEvents();
+
+            if (response.ok) {
+                sendNotificationEmail(username, reason);
+                fetchEvents();
+            } else {
+                console.error('Katılımcıyı etkinlikten çıkarma işleminde bir hata oluştu');
+            }
         } catch (error) {
             console.error('Katılımcıyı etkinlikten çıkarırken bir hata oluştu:', error);
         }
     };
-    // const handleCardClick = (eventId) => {
-    //     navigate(`/event/${eventId}`);
-    // };
 
     const sendNotificationEmail = async (username, reason) => {
         try {
@@ -146,7 +150,7 @@ const Events = () => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    recipient: user.email, // veya başka bir e-posta alanı
+                    recipient: user.email,
                     subject: 'Etkinlikten Atıldınız',
                     message: `Merhaba ${username},\n\nEtkinlikten şu nedenle atıldınız: ${reason}\n\nEtkinlik Yönetimi`
                 })
@@ -160,7 +164,7 @@ const Events = () => {
             console.error('E-posta gönderirken bir hata oluştu:', error);
         }
     };
- 
+
     return (
         <div>
             <Navbar />
@@ -168,8 +172,7 @@ const Events = () => {
                 <h2>Etkinlikler</h2>
                 <div className="event-cards">
                     {events.map(event => (
-                        // onClick={() => handleCardClick(event._id)}
-                        <div key={event._id} className="event-card" >
+                        <div key={event._id} className="event-card">
                             <h3>{event.eventName}</h3>
                             <p><strong>Tarih:</strong> {formatDate(event.eventDate)}</p>
                             <p><strong>Yer:</strong> {event.eventLocation}</p>
