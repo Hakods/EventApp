@@ -154,6 +154,14 @@ app.post('/events/:eventId/join', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Etkinlik dolu' });
     }
 
+    // Tarihi geçmiş etkinlik kontrolü
+    const currentDate = new Date();
+    const eventDate = new Date(event.eventDate);
+    
+    // Sadece tarihi geçmiş etkinlikler için katılımı engelle
+    if (currentDate > eventDate && !(currentDate.toDateString() === eventDate.toDateString())) {
+      return res.status(400).json({ message: 'Tarihi geçmiş etkinliğe katılamazsınız' });
+    }
     // Kullanıcının zaten katılımcı olup olmadığını kontrol et
     if (event.participants.includes(userId)) {
       return res.status(400).json({ message: 'Kullanıcı zaten etkinliğe katılmış' });
@@ -206,6 +214,7 @@ app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (r
   const eventId = req.params.eventId;
   const userIdToRemove = req.params.userId;
   const { reason } = req.body;
+  const removingUserId = req.userId; // authMiddleware'den gelen kullanıcı ID'si
 
   try {
     // Etkinliği bul
@@ -215,7 +224,7 @@ app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (r
     }
 
     // Etkinliği oluşturan kişi kontrolü
-    if (event.createdBy.toString() !== req.userId.toString()) {
+    if (event.createdBy.toString() !== removingUserId.toString()) {
       return res.status(403).json({ message: 'Sadece etkinlik sahibi katılımcıyı çıkarabilir' });
     }
 
@@ -231,9 +240,10 @@ app.post('/events/:eventId/remove-participant/:userId', authMiddleware, async (r
 
     // Çıkarılan kullanıcıya e-posta gönderme işlemi
     const removedUser = await User.findById(userIdToRemove);
-    if (removedUser) {
+    const removingUser = await User.findById(removingUserId);
+    if (removedUser && removingUser) {
       const emailSubject = 'Etkinlikten çıkarıldınız';
-      const emailBody = `Merhaba ${removedUser.username},\n\n ${event.eventName} etkinliğinden çıkarıldınız.\nNeden: ${reason}\n\nSaygılarımızla,\nEtkinlik Yönetimi`;
+      const emailBody = `Merhaba ${removedUser.username},\n\n${event.eventName} etkinliğinden çıkarıldınız.\nNeden: ${reason}\nÇıkaran: ${removingUser.username}\n\nSaygılarımızla,\nEtkinlik Yönetimi`;
       sendEmail(removedUser.email, emailSubject, emailBody); // E-posta gönderme fonksiyonu
       console.log('E-posta gönderildi:', emailBody);
     }

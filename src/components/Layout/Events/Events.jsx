@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../Navbar/Navbar';
 import './Events.css';
-import { useNavigate } from 'react-router-dom';
 
 const Events = () => {
     const [events, setEvents] = useState([]);
     const [user, setUser] = useState(null);
-    const navigate = useNavigate();
+  
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -54,7 +53,6 @@ const Events = () => {
             console.error('Sunucu ile iletişimde bir hata oluştu:', error);
         }
     };
-
     const handleJoinEvent = async (eventId, createdBy) => {
         if (!user) {
             alert('Lütfen giriş yapınız.');
@@ -76,7 +74,9 @@ const Events = () => {
             if (response.ok) {
                 fetchEvents();
             } else {
-                console.error('Etkinliğe katılma işleminde bir hata oluştu');
+                const errorData = await response.json();
+                alert(errorData.message);
+                console.error('Etkinliğe katılma işleminde bir hata oluştu', errorData.message);
             }
         } catch (error) {
             console.error('Sunucu ile iletişimde bir hata oluştu:', error);
@@ -165,6 +165,11 @@ const Events = () => {
         }
     };
 
+    const isEventPast = (eventDate) => {
+        const currentDate = new Date();
+        const eventDateObj = new Date(eventDate);
+        return currentDate > eventDateObj && currentDate.toDateString() !== eventDateObj.toDateString();
+    };
     return (
         <div>
             <Navbar />
@@ -214,7 +219,7 @@ const Events = () => {
                                             e.stopPropagation();
                                             handleJoinEvent(event._id, event.createdBy ? event.createdBy._id : null);
                                         }}
-                                        disabled={event.participants.length >= event.maxParticipants || (user && event.createdBy && event.createdBy._id === user._id)}
+                                        disabled={event.participants.length >= event.maxParticipants || (user && event.createdBy && event.createdBy._id === user._id) || isEventPast(event.eventDate)}
                                     >
                                         Katıl
                                     </button>
